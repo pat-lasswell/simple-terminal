@@ -40,6 +40,9 @@ wchar_t *worddelimiters = L" ";
 static unsigned int doubleclicktimeout = 300;
 static unsigned int tripleclicktimeout = 600;
 
+/* set full screen mode */
+int fullscreen = 1;
+
 /* alt screens */
 int allowaltscreen = 1;
 

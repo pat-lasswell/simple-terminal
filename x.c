@@ -154,6 +154,7 @@ static void xinit(int, int);
 static void cresize(int, int);
 static void xresize(int, int);
 static void xhints(void);
+static void xfullscreen(void);
 static int xloadcolor(int, const char *, Color *);
 static int xloadfont(Font *, FcPattern *);
 static void xloadfonts(const char *, double);
@@ -253,6 +254,16 @@ static char *opt_name  = NULL;
 static char *opt_title = NULL;
 
 static int oldbutton = 3; /* button event on startup: 3 = release */
+
+static int is_full_screen = 0;
+
+typedef struct {
+        unsigned long   flags;
+        unsigned long   functions;
+        unsigned long   decorations;
+        long            inputMode;
+        unsigned long   status;
+} Hints;
 
 void
 clipcopy(const Arg *dummy)
@@ -878,6 +889,29 @@ xgeommasktogravity(int mask)
 	return SouthEastGravity;
 }
 
+void
+xfullscreen(void)
+{
+        Hints   hints;
+        Atom    property;
+        Screen *screen;
+        int     width, height;
+
+	hints.flags = 2;        // 2 => change window decorations
+	hints.decorations = 0;  // 0 => remove decorations
+
+	property = XInternAtom(xw.dpy, "_MOTIF_WM_HINTS", True);
+	XChangeProperty(xw.dpy, xw.win, property, property, 32, PropModeReplace,
+			(unsigned char *)&hints, 5);
+
+	screen = XDefaultScreenOfDisplay(xw.dpy);
+	width = XWidthOfScreen(screen);
+	height = XHeightOfScreen(screen);
+
+	XMoveResizeWindow(xw.dpy, xw.win, 0, 0, width, height);
+	XMapRaised(xw.dpy, xw.win);
+}
+
 int
 xloadfont(Font *f, FcPattern *pattern)
 {
@@ -1198,8 +1232,12 @@ xinit(int cols, int rows)
 	win.mode = MODE_NUMLOCK;
 	resettitle();
 	xhints();
+
 	XMapWindow(xw.dpy, xw.win);
 	XSync(xw.dpy, False);
+
+	if (fullscreen == 1)
+		xfullscreen();
 
 	clock_gettime(CLOCK_MONOTONIC, &xsel.tclick1);
 	clock_gettime(CLOCK_MONOTONIC, &xsel.tclick2);
